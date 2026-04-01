@@ -14,6 +14,7 @@ Local-first MCP replay debugger built on Agnost AI.
 npm install
 npm run db:generate
 npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
@@ -87,3 +88,15 @@ Session list supports query params:
 - play/pause/step-forward
 - seek bar for timeline position
 - replay speed control (0.5x to 4x)
+
+## E2E smoke tests
+```bash
+npm run test:e2e
+```
+Current smoke suite focuses on API-level checks so it runs in CI without browser binaries.
+
+## Wrapper packaging (npx-ready)
+Pack local scaffold CLI tarball:
+```bash
+npm run wrapper:pack
+```

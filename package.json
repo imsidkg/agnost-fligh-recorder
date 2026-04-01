@@ -11,7 +11,11 @@
     "desktop:build": "tauri build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "wrapper:pack": "npm pack ./create-flight-recorder"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
@@ -34,6 +38,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@tailwindcss/postcss": "^4",
     "@tauri-apps/cli": "^2.0.0",
     "@types/node": "^20",

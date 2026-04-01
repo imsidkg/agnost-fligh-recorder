@@ -1,11 +1,55 @@
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
-import { db } from "@/lib/db/client";
+import { client, db } from "@/lib/db/client";
 import { checkpoints, events, sessions } from "@/lib/db/schema";
 import type { CapturedEvent } from "@/lib/types";
 
 const toJson = (value: unknown) => JSON.stringify(value ?? null);
+let dbInitPromise: Promise<void> | null = null;
+
+async function ensureDbInitialized() {
+  if (!dbInitPromise) {
+    dbInitPromise = (async () => {
+      await client.execute(`
+        create table if not exists sessions (
+          id integer primary key autoincrement,
+          session_id text not null unique,
+          user_id text,
+          agent_name text,
+          started_at integer not null,
+          created_at integer not null default (unixepoch('now') * 1000)
+        );
+      `);
+      await client.execute(`
+        create table if not exists events (
+          id integer primary key autoincrement,
+          session_id text not null,
+          interaction_id text,
+          primitive_name text not null,
+          primitive_type text not null,
+          args_json text not null,
+          result_json text not null,
+          success integer not null,
+          latency_ms integer not null,
+          metadata_json text not null,
+          captured_at integer not null
+        );
+      `);
+      await client.execute(`
+        create table if not exists checkpoints (
+          id integer primary key autoincrement,
+          event_id integer not null,
+          name text not null,
+          timestamp_ms integer not null,
+          metadata_json text not null
+        );
+      `);
+    })();
+  }
+  await dbInitPromise;
+}
 
 export async function persistCapturedEvent(payload: CapturedEvent) {
+  await ensureDbInitialized();
   const now = Date.now();
   const capturedAt = new Date(payload.captured_at ?? now);
 
@@ -55,6 +99,7 @@ export async function listSessions(filters?: {
   to?: number;
   errorsOnly?: boolean;
 }) {
+  await ensureDbInitialized();
   const where = [];
   if (filters?.query) {
     where.push(
@@ -92,6 +137,7 @@ export async function listSessions(filters?: {
 }
 
 export async function getSessionWithEvents(sessionId: string) {
+  await ensureDbInitialized();
   const session = await db
     .select()
     .from(sessions)

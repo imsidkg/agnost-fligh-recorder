@@ -2,8 +2,15 @@
   "name": "create-flight-recorder",
   "version": "0.1.0",
   "type": "module",
+  "description": "Scaffold environment defaults for Agnost Flight Recorder projects",
+  "license": "MIT",
+  "keywords": ["agnost", "mcp", "debugger", "flight-recorder", "cli"],
+  "files": ["index.js", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "create-flight-recorder": "./index.js"
   },
-  "private": true
+  "private": false
 }
