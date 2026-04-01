@@ -30,7 +30,14 @@ npm run desktop:build
 ## Environment
 Create `.env.local`:
 ```bash
-DATABASE_URL=file:./flight-recorder.db
+DATABASE_URL=file:./flight-recorder.db # local dev
+AGNOST_ORG_ID=5b052a8c-e1c0-4095-a303-949539a2ff3c
+```
+
+For Vercel + Turso, use:
+```bash
+DATABASE_URL=libsql://agnosti-ai-siddharth8271skg2.aws-ap-south-1.turso.io
+TURSO_AUTH_TOKEN=your_turso_auth_token
 AGNOST_ORG_ID=5b052a8c-e1c0-4095-a303-949539a2ff3c
 ```
 
