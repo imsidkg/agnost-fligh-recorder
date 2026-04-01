@@ -1,23 +1,31 @@
 import { getSessionWithEvents } from "@/lib/flight-recorder/store";
 import { NextResponse } from "next/server";
 
-const asTsTest = (payload: unknown) => `import { describe, it, expect } from "vitest";
+type SessionPayload = Awaited<ReturnType<typeof getSessionWithEvents>>;
+
+const asTsTest = (payload: SessionPayload) => `import { describe, it, expect } from "vitest";
 
 const fixture = ${JSON.stringify(payload, null, 2)};
 
 describe("recorded session replay", () => {
-  it("has successful events", () => {
-    expect(fixture.events.every((e: any) => e.success)).toBeTruthy();
+  it("matches deterministic shape", () => {
+    expect(fixture.session.sessionId).toBe("${payload?.session.sessionId ?? ""}");
+    expect(fixture.events.length).toBe(${payload?.events.length ?? 0});
+    expect(fixture.events.map((e: any) => e.primitiveName)).toMatchSnapshot();
   });
 });
 `;
 
-const asPytestFixture = (payload: unknown) => `import json
+const asPytestFixture = (payload: SessionPayload) => `import json
 import pytest
 
 @pytest.fixture
 def recorded_session():
     return json.loads('''${JSON.stringify(payload)}''')
+
+def test_deterministic_shape(recorded_session):
+    assert recorded_session["session"]["sessionId"] == "${payload?.session.sessionId ?? ""}"
+    assert len(recorded_session["events"]) == ${payload?.events.length ?? 0}
 `;
 
 export async function GET(
@@ -37,6 +45,15 @@ export async function GET(
   if (format === "ts") {
     return new NextResponse(asTsTest(data), {
       headers: { "Content-Type": "text/typescript" },
+    });
+  }
+  if (format === "bundle") {
+    return NextResponse.json({
+      files: {
+        "session.json": JSON.stringify(data, null, 2),
+        "recorded_session.py": asPytestFixture(data),
+        "recorded_session.spec.ts": asTsTest(data),
+      },
     });
   }
   return NextResponse.json(data);

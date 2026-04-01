@@ -10,15 +10,21 @@ export async function POST(
   const data = await getSessionWithEvents(sessionId);
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const logs = data.events.map((event) => ({
+  const steps = data.events.map((event) => ({
     eventId: event.id,
     primitive: event.primitiveName,
+    primitiveType: event.primitiveType,
     status: event.success ? "ok" : "error",
-    checkpoints: event.checkpoints.length,
-    mode,
+    checkpoints: event.checkpoints.map((checkpoint) => ({
+      name: checkpoint.name,
+      timestampMs: checkpoint.timestampMs,
+      metadata: JSON.parse(checkpoint.metadataJson),
+    })),
     replayResult:
-      mode === "mock" ? JSON.parse(event.resultJson) : { note: "live mode hook goes here" },
+      mode === "mock"
+        ? JSON.parse(event.resultJson)
+        : { note: "live mode enabled: bind real tool handlers here" },
   }));
 
-  return NextResponse.json({ mode, logs });
+  return NextResponse.json({ mode, steps });
 }

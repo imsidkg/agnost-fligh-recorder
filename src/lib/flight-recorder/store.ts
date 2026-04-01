@@ -50,6 +50,7 @@ export async function persistCapturedEvent(payload: CapturedEvent) {
 
 export async function listSessions(filters?: {
   query?: string;
+  agent?: string;
   from?: number;
   to?: number;
   errorsOnly?: boolean;
@@ -59,6 +60,9 @@ export async function listSessions(filters?: {
     where.push(
       sql`${sessions.sessionId} like ${`%${filters.query}%`} or ${sessions.agentName} like ${`%${filters.query}%`}`,
     );
+  }
+  if (filters?.agent) {
+    where.push(eq(sessions.agentName, filters.agent));
   }
   if (filters?.from) where.push(gte(sessions.startedAt, new Date(filters.from)));
   if (filters?.to) where.push(lte(sessions.startedAt, new Date(filters.to)));

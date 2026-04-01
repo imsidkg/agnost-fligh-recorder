@@ -17,6 +17,15 @@ npm run db:migrate
 npm run dev
 ```
 
+## Desktop mode (optional, Tauri)
+```bash
+npm run desktop:dev
+```
+Build desktop app:
+```bash
+npm run desktop:build
+```
+
 ## Environment
 Create `.env.local`:
 ```bash
@@ -54,9 +63,27 @@ await recorder.withCapture({
 - `GET /api/sessions`
 - `GET /api/sessions/:sessionId`
 - `POST /api/replay/:sessionId`
-- `GET /api/export/:sessionId?format=json|pytest|ts`
+- `GET /api/export/:sessionId?format=json|pytest|ts|bundle`
+
+## Filtering
+Session list supports query params:
+- `query` (session id or agent contains)
+- `agent` (exact agent match)
+- `from` and `to` (epoch ms)
+- `errorsOnly=true`
+
+## Export bundle
+`format=bundle` returns a JSON object with generated files:
+- `session.json`
+- `recorded_session.py`
+- `recorded_session.spec.ts`
 
 ## Screenshot placeholders
 - `docs/screenshots/dashboard.png`
 - `docs/screenshots/timeline-expanded.png`
 - `docs/screenshots/replay-logs.png`
+
+## Replay controls
+- play/pause/step-forward
+- seek bar for timeline position
+- replay speed control (0.5x to 4x)

@@ -59,6 +59,9 @@ export function Timeline({ events }: { events: EventItem[] }) {
                       <div key={checkpoint.id} className="rounded-md border border-zinc-700 p-2 text-xs">
                         <div className="font-medium text-zinc-200">{checkpoint.name}</div>
                         <div className="text-zinc-400">{checkpoint.timestampMs}</div>
+                        <div className="mt-2">
+                          <JsonViewer value={JSON.parse(checkpoint.metadataJson)} />
+                        </div>
                       </div>
                     ))}
                   </div>

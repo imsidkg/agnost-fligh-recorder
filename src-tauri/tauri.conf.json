@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Agnost Flight Recorder",
+  "version": "0.1.0",
+  "identifier": "ai.agnost.flightrecorder",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../.next"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Agnost Flight Recorder",
+        "width": 1400,
+        "height": 960,
+        "resizable": true
+      }
+    ]
+  }
+}
