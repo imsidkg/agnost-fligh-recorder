@@ -1,0 +1,114 @@
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { checkpoints, events, sessions } from "@/lib/db/schema";
+import type { CapturedEvent } from "@/lib/types";
+
+const toJson = (value: unknown) => JSON.stringify(value ?? null);
+
+export async function persistCapturedEvent(payload: CapturedEvent) {
+  const now = Date.now();
+  const capturedAt = new Date(payload.captured_at ?? now);
+
+  await db
+    .insert(sessions)
+    .values({
+      sessionId: payload.session_id,
+      userId: payload.user_id ?? null,
+      agentName: payload.agent_name ?? null,
+      startedAt: capturedAt,
+    })
+    .onConflictDoNothing({ target: sessions.sessionId });
+
+  const inserted = await db
+    .insert(events)
+    .values({
+      sessionId: payload.session_id,
+      interactionId: payload.interaction_id ?? null,
+      primitiveName: payload.primitive_name,
+      primitiveType: payload.primitive_type,
+      argsJson: toJson(payload.args),
+      resultJson: toJson(payload.result),
+      success: payload.success,
+      latencyMs: payload.latency,
+      metadataJson: toJson(payload.metadata),
+      capturedAt,
+    })
+    .returning({ id: events.id });
+
+  const eventId = inserted[0]?.id;
+  if (!eventId || payload.checkpoints.length === 0) return;
+
+  await db.insert(checkpoints).values(
+    payload.checkpoints.map((checkpoint) => ({
+      eventId,
+      name: checkpoint.name,
+      timestampMs: checkpoint.timestamp_ms,
+      metadataJson: toJson(checkpoint.metadata),
+    })),
+  );
+}
+
+export async function listSessions(filters?: {
+  query?: string;
+  from?: number;
+  to?: number;
+  errorsOnly?: boolean;
+}) {
+  const where = [];
+  if (filters?.query) {
+    where.push(
+      sql`${sessions.sessionId} like ${`%${filters.query}%`} or ${sessions.agentName} like ${`%${filters.query}%`}`,
+    );
+  }
+  if (filters?.from) where.push(gte(sessions.startedAt, new Date(filters.from)));
+  if (filters?.to) where.push(lte(sessions.startedAt, new Date(filters.to)));
+  if (filters?.errorsOnly) {
+    where.push(
+      sql`exists (select 1 from ${events} where ${events.sessionId} = ${sessions.sessionId} and ${events.success} = 0)`,
+    );
+  }
+  const predicate = where.length ? and(...where) : undefined;
+
+  return db
+    .select({
+      sessionId: sessions.sessionId,
+      userId: sessions.userId,
+      agentName: sessions.agentName,
+      startedAt: sessions.startedAt,
+      eventCount: sql<number>`(
+        select count(*) from ${events} e where e.session_id = ${sessions.sessionId}
+      )`,
+      errorCount: sql<number>`(
+        select count(*) from ${events} e where e.session_id = ${sessions.sessionId} and e.success = 0
+      )`,
+    })
+    .from(sessions)
+    .where(predicate)
+    .orderBy(desc(sessions.startedAt));
+}
+
+export async function getSessionWithEvents(sessionId: string) {
+  const session = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.sessionId, sessionId))
+    .limit(1);
+  if (!session[0]) return null;
+
+  const eventRows = await db
+    .select()
+    .from(events)
+    .where(eq(events.sessionId, sessionId))
+    .orderBy(events.capturedAt);
+
+  const output = [];
+  for (const event of eventRows) {
+    const cps = await db
+      .select()
+      .from(checkpoints)
+      .where(eq(checkpoints.eventId, event.id))
+      .orderBy(checkpoints.timestampMs);
+    output.push({ ...event, checkpoints: cps });
+  }
+  return { session: session[0], events: output };
+}

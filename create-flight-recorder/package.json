@@ -1,0 +1,9 @@
+{
+  "name": "create-flight-recorder",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "create-flight-recorder": "./index.js"
+  },
+  "private": true
+}
