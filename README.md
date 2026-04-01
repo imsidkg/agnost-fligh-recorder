@@ -102,6 +102,11 @@ npm run test:e2e
 ```
 Current smoke suite focuses on API-level checks so it runs in CI without browser binaries.
 
+Run smoke tests against deployed app:
+```bash
+npm run test:e2e:prod
+```
+
 ## Wrapper packaging (npx-ready)
 Pack local scaffold CLI tarball:
 ```bash
